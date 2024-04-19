@@ -1,0 +1,124 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes,force:lightningQuickAction" access="global" controller="RunAllTstClassesController" >
+    <aura:handler name="init" value="{!this}" action="{!c.fetchTestClasses}"/>
+    <aura:attribute name="temporaryList" type="List" default="[]"/>
+    <aura:attribute name="permanentList" type="List" default="[]"/>
+    <aura:attribute name="showList" type="List" default="[]"/>
+    <aura:attribute name="selectedRowsNumber" type="Integer" default="0"/>
+    <aura:attribute name="displayTestClasses" type="SObject[]"/>
+    <aura:attribute name="columns" type="List"/>
+    <aura:attribute name="showButton1" type="Boolean" default="true"/>
+    <aura:attribute name="showButton2" type="Boolean" default="false"/>
+    <aura:attribute name="showButton3" type="Boolean" default="false"/>
+    <aura:attribute name="showCoverageClassButton" type="Boolean" default="false"/>
+    <aura:attribute name="checkStatus" type="Boolean" default="false"/>
+    <aura:attribute name="checkCodeCoverage" type="Boolean" default="false"/>
+    <aura:attribute name="checkCodeCoverageEachClass" type="Boolean" default="false"/>
+    <aura:attribute name="inSearch" type="Boolean" default="false"/>
+    <aura:attribute name="asyncJob" type="Id"/>
+    <aura:attribute name="classNameList" type="List"/>
+    <aura:attribute name="testResultData" type="SObject[]"/>
+    <aura:attribute name="coverageColumns" type="List"/>
+    <aura:attribute name="responseData" type="List"/>
+    <aura:attribute name="coverage" type="List"/>
+    <aura:attribute name="coverageEachClass" type="List"/>
+    <!--		  Search Selected			-->
+        <div class="slds-grid slds-wrap slds-size_3-of-6 slds-float_left">
+            <div class="slds-col">
+                <div onkeyup="{! c.handleKeyUp}">
+                    <lightning:input
+                                     aura:id="enterSearch"
+                                     name="enterSearch"
+                                     placeholder="Enter test class name to be searched"
+                                     type="String"/>
+                        </div>
+                    </div>
+                </div>
+    <!--		Test Classes Slection 		-->
+    
+    <table>
+        <tr class="slds-float_right">
+            <lightning:button label="Run All Test Classes" variant="brand" onclick="{!c.handleClick}"/>
+        </tr> 
+        <tr>
+            <lightning:datatable columns="{!v.columns}" data="{!v.displayTestClasses}" selectedRows="{!v.showList}" onrowselection="{!c.storeData}" keyField="Id"/>
+        </tr>
+        <tr class="slds-float_right"><lightning:button label="Test Selected" variant="brand" onclick="{!c.submitSelected}"/></tr>
+    </table>
+    
+    <aura:if isTrue="{!v.showButton2}">
+        	<lightning:button label="Check Status" variant="brand" onclick="{!c.testClassesResults}"/>
+    </aura:if>
+    <aura:if isTrue="{!v.checkStatus}">
+        <lightning:card class="slds-text-align_center">
+            <div class="slds-grid slds-gutters">
+                <div class="slds-section slds-is-open slds-col">
+                    <table class="slds-table slds-table--bordered slds-table--cell-buffer slds-table_resizeable-cols" role="grid">
+                        <thead>
+                            <tr class="slds-text-title--caps">
+                                <th class="slds-text-heading_medium slds-text-align_center">Status of Test Classes</th>
+                            </tr>
+                        </thead>
+                    <br/>
+                        <table class="slds-table slds-table--bordered">
+                            <tr class="slds-text-title--caps slds-text-title_bold">
+                                <td><div class="slds-text-align_center">Test Class Name</div></td>
+                                <td><div class="slds-text-align_center">Method Name</div></td>
+                                <td><div class="slds-text-align_center">Outcome</div></td>
+                                <td><div class="slds-text-align_center">Message</div></td>
+                            </tr>
+                            <aura:iteration items="{!v.testResultData}" var="trData" indexVar="index">
+                                <tr>
+                                    <td scope="col"><div class="slds-truncate slds-text-align_center slds-text-heading_small" title="{!trData.ApexClass.Name}">{!trData.ApexClass.Name}</div> </td>
+                                    <td scope="col"><div class="slds-truncate slds-text-align_center slds-text-heading_small" title="{!trData.MethodName}">{!trData.MethodName}</div></td>
+                                    <td scope="col"><div class="slds-truncate slds-text-align_center slds-text-heading_small" title="{!trData.Outcome}">{!trData.Outcome}</div></td>
+                                    <td scope="col"><div class="slds-truncate slds-text-align_center slds-text-heading_small" title="{!trData.Message}">{!trData.Message}</div></td>
+                                </tr>
+                            </aura:iteration>
+                        </table>
+                    </table>  
+            	</div>
+            </div>
+        </lightning:card>
+    </aura:if>
+    <br/>
+    <aura:if isTrue="{!v.showButton3}">
+        <lightning:button label="Check Code Coverage" variant="brand" onclick="{!c.apiCallout}"/>
+    </aura:if>
+    <br/>
+    <aura:if isTrue="{!v.checkCodeCoverage}">
+        <tr>
+            <lightning:datatable keyField="TestClassName" columns="{!v.coverageColumns}" data="{!v.responseData}" hideCheckboxColumn="true"/>
+        </tr>
+    </aura:if>
+    <br/>
+    <aura:if isTrue="{!v.showCoverageClassButton}">
+        <lightning:button label="Check Code Coverage for Each Involved Class" variant="brand" onclick="{!c.codeCoverageForClass}"/>
+        <div class="slds-float_right">
+        	<lightning:button label="Download Data for Each Test Class" variant="brand" onclick="{!c.downlaodDataEachTestClass}"/>
+        </div>
+    </aura:if>
+    <br/>
+    <aura:if isTrue="{!v.checkCodeCoverageEachClass}">
+        <table class="slds-table slds-table--bordered">
+            <thead>
+                <tr class="slds-text-title--caps">
+                    <th class="slds-text-heading_medium slds-text-align_center">Overall Code Coverage</th>
+                </tr>
+            </thead>
+            <table class="slds-table slds-table--bordered">
+                <tr class="slds-text-title--caps slds-text-title_bold">
+                	<td><div class="slds-text-align_center">Class Name</div></td>
+                    <td><div class="slds-text-align_center">Code Coverage Percentage</div></td>
+                </tr>
+                <aura:iteration items="{!v.coverageEachClass}" var="cov">
+                    <tr>
+                        <td><div class="slds-text-align_center">{!cov.key}</div></td>
+                        <td><div class="slds-text-align_center">{!cov.value}</div></td>
+                    </tr>
+            	</aura:iteration>
+            </table>
+        </table>
+        <br/>
+        <lightning:button label="Download Data For Each Involved Class" variant="brand" onclick="{!c.downloadDataEachClass}"/>
+    </aura:if>
+</aura:component>
