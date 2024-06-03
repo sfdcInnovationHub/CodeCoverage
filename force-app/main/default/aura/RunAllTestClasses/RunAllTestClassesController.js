@@ -19,35 +19,33 @@
     },
     
     handleKeyUp : function(component, event, helper){
-        var showList = component.get('v.showList');
-        var permList = component.get('v.permanentList');
-        var tempList = component.get('v.temporaryList');
-        
-        console.log('line 26', showList);
+        var showList = component.get('v.showList');                 //This list shows the final values selected
+        var permList = component.get('v.permanentList');            //This list shows the values selected by the user before entering the search term
+        var tempList = component.get('v.temporaryList');            //This is the temporary list which has been selected by the user recently.
+
         var searchKeyWord = component.find("enterSearch").get("v.value");
+        //When user enters a search word
         if(searchKeyWord.length != 0){
-            console.log(searchKeyWord, 'line 25');
             component.set('v.inSearch' , true);	
-            console.log("length not zero");
         }
+        //When the search bar is not empty
         else if(searchKeyWord.length == 0){
             console.log("search length is zero");
             component.set('v.inSearch', false);
             var permSet = new Set();
-            var showSet = new Set();
-            console.log("line 36");
+            var showSet = new Set();                                //This set holds the values from the list that are to be displayed.
+
             for(var each in permList){
-                permSet.add(permList[each]);
+                permSet.add(permList[each]);                          
             }
             for (var each in showList){
                 showSet.add(showList[each]);
             }
-            console.log('line 47', showSet);
+
             for(var each of permSet){
                 showSet.add(each);
             }
-            showList = Array.from(showSet);
-            console.log('line 52', showList);           
+            showList = Array.from(showSet);           
         }
         var action = component.get("c.fetchRecords");
         action.setParams({searchWord : searchKeyWord})
@@ -63,20 +61,17 @@
     },
     
     storeData : function(component, event, helper){        
-        var selectedRowData = event.getParam('selectedRows');
-        console.log('line 67', selectedRowData);
+        var selectedRowData = event.getParam('selectedRows');            //The selected row data has been fetched from the aura component.       
         var tempList = [];
         for(var eachRecord in selectedRowData){
             tempList.push(selectedRowData[eachRecord].Id);
         }
-        console.log('line 75', tempList[0]);
         component.set('v.temporaryList', tempList);
         var showList = component.get('v.showList');
         var permList = component.get('v.permanentList');
         var tempList = component.get('v.temporaryList');
         var inSearch = component.get('v.inSearch');
         if(inSearch == false){
-            console.log('in search false', inSearch);
 			component.set('v.showList', tempList);
         }
         // When inSearch is true
@@ -108,7 +103,6 @@
 			            
             for(var each of tempSet){
                 dataSet.delete(each);
-                console.log('dataSet' , dataSet);
             }
             //Now dataSet contains those value which are not selected.
             
@@ -123,7 +117,7 @@
     
     submitSelected : function(component, event, helper){
         var selectedRows = component.get('v.showList');
-        component.set('v.selectedRowsNumber', selectedRows.length); //The data of number of selected Rows are stored over here.
+        component.set('v.selectedRowsNumber', selectedRows.length);         //The data of number of selected Rows are stored over here.
         var action = component.get('c.runSelected');
         action.setParams({testClassesId : selectedRows});
         action.setCallback(this, function(response){
@@ -131,8 +125,7 @@
             console.log(state);
             if (state==='SUCCESS'){
                 var result = response.getReturnValue();
-                console.log(result);
-                component.set('v.asyncJob', result);
+                component.set('v.asyncJob', result);                        //The AsyncJob Id has been stored in the aura component.
             }
             
         });
@@ -140,19 +133,16 @@
         component.set('v.showButton2', true);
     },
     
-	handleClick : function(component, event, helper) {
-        console.log('In handleClick');
-		var action = component.get('c.getHandler');
+	runAllTestClasses : function(component, event, helper) {                      //When the run all test classes button is clicked.
+		var action = component.get('c.runAll');
         action.setParams({});
-        action.setCallback(this, function(response){
+        action.setCallback(this, function(response){                        
             var state = response.getState();
-            console.log(state);
             if(state=='SUCCESS'){  
                 var result = response.getReturnValue();
-                console.log(result);
                 for(var each in result){
                     component.set('v.asyncJob', each);
-                    component.set('v.selectedRowsNumber', result[each]);
+                    component.set('v.selectedRowsNumber', result[each]);        //Total number of test classes that ran are counted here.
                 }                
             }
         });
@@ -161,18 +151,17 @@
     },
     
     testClassesResults : function(component, event, helper){
-    	console.log('In testClassesResults');
         var numberOfSelectedRows = component.get('v.selectedRowsNumber');
         var asyncJobId = component.get('v.asyncJob');
-        console.log(asyncJobId);
     	var action= component.get('c.checkStatus');
         action.setParams({currentId : asyncJobId});
         action.setCallback(this, function(response){
             var state = response.getState();
-            console.log(state);
             if(state=='SUCCESS'){
                 var result = response.getReturnValue();
                 component.set('v.testResultData', result);
+
+                //Toast message if all the test classes that have been queued have not completed running.
                 if(result.length < numberOfSelectedRows){
             		var toastEvent = $A.get("e.force:showToast");
                     toastEvent.setParams({
@@ -183,6 +172,7 @@
                     });
                     toastEvent.fire();
             	}
+                //Toast message if all the test classes that have been queued have completed running.
                 else if(result.length ==  numberOfSelectedRows){
                     var toastEvent = $A.get("e.force:showToast");
                     toastEvent.setParams({
@@ -200,16 +190,15 @@
         component.set('v.checkStatus', true);
         component.set('v.showButton3', true);
     },
-    
+
+    //API callout to get the coverage by the test classes for each of their respective classes.
     apiCallout : function(component, event, helper){
-        console.log('In apiCallout');
         var testResultData = component.get('v.testResultData');
-        console.log(testResultData);
         var testClassesName = [];
         for(var each in testResultData){
             testClassesName.push(testResultData[each].ApexClass.Name);
         }
-        var action = component.get('c.getApexCodeCoverage');
+        var action = component.get('c.getCodeCoverageForEachTest');
         action.setParams({testClasses: testClassesName});
         action.setCallback(this, function(response){
             var state = response.getState();
@@ -239,10 +228,11 @@
         component.set('v.showCoverageClassButton', true);
     },
     
+    //API callout for getting the org code coverage of the classes that have been checked with the test classes.
     codeCoverageForClass : function(component, event, helper){
         var classNames = component.get('v.classNameList');
         var feedingData = [];
-        var action = component.get('c.CodeCoverageEachClass');
+        var action = component.get('c.codeCoverageEachClass');
         action.setParams({classNameList : classNames});
         action.setCallback(this, function(response){
             var state = response.getState();
@@ -260,6 +250,7 @@
         $A.enqueueAction(action);
     }, 
     
+    //Downloading the details in CSV format for the test classes
     downlaodDataEachTestClass : function(component, event, helper){
         var listData = component.get("v.responseData"); 
         console.log('In download Data');
@@ -277,6 +268,7 @@
         hiddenElement.click(); // using click() js function to download csv file
     },
     
+    //Downloading the details in CSV format for the classes that have been tested by the selected test classes
     downloadDataEachClass : function(component, event, helper){
         var listData = component.get("v.coverageEachClass"); 
         var csv = helper.convertToCSVEachClass(component,listData); 

@@ -4,6 +4,7 @@
         <members>CodeCoverageWrapperClass</members>
         <members>JsonApexCodeCoverage</members>
         <members>RunAllTstClassesController</members>
+        <members>RunAllTstClassesControllerTest</members>
         <name>ApexClass</name>
     </types>
     <types>

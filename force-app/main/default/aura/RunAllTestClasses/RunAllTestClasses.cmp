@@ -33,18 +33,20 @@
                         </div>
                     </div>
                 </div>
+                
     <!--		Test Classes Slection 		-->
     
     <table>
         <tr class="slds-float_right">
-            <lightning:button label="Run All Test Classes" variant="brand" onclick="{!c.handleClick}"/>
+            <lightning:button label="Run All Test Classes" variant="brand" onclick="{!c.runAllTestClasses}"/>
         </tr> 
         <tr>
             <lightning:datatable columns="{!v.columns}" data="{!v.displayTestClasses}" selectedRows="{!v.showList}" onrowselection="{!c.storeData}" keyField="Id"/>
         </tr>
         <tr class="slds-float_right"><lightning:button label="Test Selected" variant="brand" onclick="{!c.submitSelected}"/></tr>
     </table>
-    
+
+    <!-- Status of each of the test classes that had run -->
     <aura:if isTrue="{!v.showButton2}">
         	<lightning:button label="Check Status" variant="brand" onclick="{!c.testClassesResults}"/>
     </aura:if>
@@ -81,6 +83,9 @@
         </lightning:card>
     </aura:if>
     <br/>
+
+    <!-- Lines Covered by each test class which were selected -->
+
     <aura:if isTrue="{!v.showButton3}">
         <lightning:button label="Check Code Coverage" variant="brand" onclick="{!c.apiCallout}"/>
     </aura:if>
@@ -98,6 +103,9 @@
         </div>
     </aura:if>
     <br/>
+    
+    <!-- Overall code coverage of each of the tested class -->
+
     <aura:if isTrue="{!v.checkCodeCoverageEachClass}">
         <table class="slds-table slds-table--bordered">
             <thead>
